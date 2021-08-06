@@ -331,8 +331,16 @@ private[hive] class SparkExecuteStatementOperation(
           resultList = None
           result.toLocalIterator.asScala
         } else {
-          resultList = Some(result.collect())
-          resultList.get.iterator
+          val rowCount = result.count()
+          val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toLong
+          if (rowCount > maxNferRows) {
+            logInfo(s"NFER --> The Number of rows in the query are $rowCount which is greater than Spark.sql.nfer_conf.max_preview_rows conf $maxNferRows for query $statementId, therefore fetching partitions sequentially")
+            resultList = None
+            result.toLocalIterator.asScala
+          } else {
+            resultList = Some(result.collect())
+            resultList.get.iterator
+          }
         }
       }
       dataTypes = result.schema.fields.map(_.dataType)
