@@ -359,6 +359,11 @@ private[hive] class SparkExecuteStatementOperation(
         if (currentState.isTerminal) {
           // This may happen if the execution was cancelled, and then closed from another thread.
           logWarning(s"Ignore exception in terminal state with $statementId: $e")
+          // todo: nfer --> this match block should be outside ideally, as if and else arms are almost same
+          e match {
+            case _: HiveSQLException => throw e
+            case _ => throw new HiveSQLException(s"NFER: Your query with $statementId was cancelled, currentState is $currentState", e)
+          }
         } else {
           logError(s"Error executing query with $statementId, currentState $currentState, ", e)
           setState(OperationState.ERROR)
