@@ -333,7 +333,7 @@ private[hive] class SparkExecuteStatementOperation(
         } else {
           val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
           if (maxNferRows > 0) {
-            logInfo("NFER: Limiting the max rows that can be fetched")
+            logInfo("NFER: Limiting the max rows that can be fetched to " + maxNferRows)
             result = result.limit(maxNferRows)
           }
           resultList = Some(result.collect())
