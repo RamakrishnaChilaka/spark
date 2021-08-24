@@ -331,8 +331,11 @@ private[hive] class SparkExecuteStatementOperation(
           resultList = None
           result.toLocalIterator.asScala
         } else {
-          val rowCount = result.count()
+          val startTime = System.nanoTime()
+          val rowCount = result.rdd.countApprox(2 * 60, 0.50).initialValue.mean
           val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toLong
+          logInfo("NFER: time took to compute rowCount is " + (System.nanoTime()-startTime)/1e9d)
+          logInfo("NFER: number of approx rows in the rdd is " + rowCount)
           if (rowCount > maxNferRows) {
             logInfo(s"NFER --> The Number of rows in the query are $rowCount which is greater than Spark.sql.nfer_conf.max_preview_rows conf $maxNferRows for query $statementId, therefore fetching partitions sequentially")
             resultList = None
