@@ -41,15 +41,15 @@ import org.apache.spark.unsafe.types.CalendarInterval
 import org.apache.spark.util.{Utils => SparkUtils}
 
 private[hive] class SparkExecuteStatementOperation(
-    val sqlContext: SQLContext,
-    parentSession: HiveSession,
-    statement: String,
-    confOverlay: JMap[String, String],
-    runInBackground: Boolean = true,
-    queryTimeout: Long)
+                                                    val sqlContext: SQLContext,
+                                                    parentSession: HiveSession,
+                                                    statement: String,
+                                                    confOverlay: JMap[String, String],
+                                                    runInBackground: Boolean = true,
+                                                    queryTimeout: Long)
   extends ExecuteStatementOperation(parentSession, statement, confOverlay, runInBackground)
-  with SparkOperation
-  with Logging {
+    with SparkOperation
+    with Logging {
 
   // If a timeout value `queryTimeout` is specified by users and it is smaller than
   // a global timeout value, we use the user-specified value.
@@ -88,10 +88,10 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   def addNonNullColumnValue(
-      from: SparkRow,
-      to: ArrayBuffer[Any],
-      ordinal: Int,
-      timeFormatters: TimeFormatters): Unit = {
+                             from: SparkRow,
+                             to: ArrayBuffer[Any],
+                             ordinal: Int,
+                             timeFormatters: TimeFormatters): Unit = {
     dataTypes(ordinal) match {
       case StringType =>
         to += from.getString(ordinal)
@@ -139,8 +139,8 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   private def getNextRowSetInternal(
-      order: FetchOrientation,
-      maxRowsL: Long): RowSet = withLocalProperties {
+                                     order: FetchOrientation,
+                                     maxRowsL: Long): RowSet = withLocalProperties {
     log.info(s"Received getNextRowSet request order=${order} and maxRowsL=${maxRowsL} " +
       s"with ${statementId}")
     validateDefaultFetchOrientation(order)
@@ -150,7 +150,7 @@ private[hive] class SparkExecuteStatementOperation(
 
     // Reset iter when FETCH_FIRST or FETCH_PRIOR
     if ((order.equals(FetchOrientation.FETCH_FIRST) ||
-        order.equals(FetchOrientation.FETCH_PRIOR)) && previousFetchEndOffset != 0) {
+      order.equals(FetchOrientation.FETCH_PRIOR)) && previousFetchEndOffset != 0) {
       // Reset the iterator to the beginning of the query.
       iter = if (sqlContext.getConf(SQLConf.THRIFTSERVER_INCREMENTAL_COLLECT.key).toBoolean) {
         resultList = None
@@ -331,19 +331,13 @@ private[hive] class SparkExecuteStatementOperation(
           resultList = None
           result.toLocalIterator.asScala
         } else {
-          val startTime = System.currentTimeMillis()
-          val rowCount = result.rdd.countApprox(10000L, 0.90).initialValue.mean
-          val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toLong
-          logInfo("NFER: time took to compute rowCount is " + (System.currentTimeMillis()-startTime)/1000)
-          logInfo("NFER: number of approx rows in the rdd is " + rowCount)
-          if (rowCount > maxNferRows) {
-            logInfo(s"NFER --> The Number of rows in the query are $rowCount which is greater than Spark.sql.nfer_conf.max_preview_rows conf $maxNferRows for query $statementId, therefore fetching partitions sequentially")
-            resultList = None
-            result.toLocalIterator.asScala
-          } else {
-            resultList = Some(result.collect())
-            resultList.get.iterator
+          val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
+          if (maxNferRows > 0) {
+            logInfo("NFER: Limiting the max rows that can be fetched")
+            result = result.limit(maxNferRows)
           }
+          resultList = Some(result.collect())
+          resultList.get.iterator
         }
       }
       dataTypes = result.schema.fields.map(_.dataType)
