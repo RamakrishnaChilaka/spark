@@ -332,7 +332,7 @@ private[hive] class SparkExecuteStatementOperation(
           result.toLocalIterator.asScala
         } else {
           val startTime = System.currentTimeMillis()
-          val rowCount = result.rdd.countApprox(1000L, 0.90).initialValue.high
+          val rowCount = result.rdd.countApprox(10000L, 0.90).initialValue.mean
           val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toLong
           logInfo("NFER: time took to compute rowCount is " + (System.currentTimeMillis()-startTime)/1000)
           logInfo("NFER: number of approx rows in the rdd is " + rowCount)
