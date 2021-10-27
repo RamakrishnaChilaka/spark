@@ -17,28 +17,25 @@
 
 package org.apache.spark.sql.hive.thriftserver
 
-import java.security.PrivilegedExceptionAction
-import java.util.{Arrays, Map => JMap}
-import java.util.concurrent.{Executors, RejectedExecutionException, TimeUnit}
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.util.control.NonFatal
-
 import org.apache.hadoop.hive.metastore.api.FieldSchema
 import org.apache.hadoop.hive.shims.Utils
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.operation.ExecuteStatementOperation
 import org.apache.hive.service.cli.session.HiveSession
-
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{DataFrame, Row => SparkRow, SQLContext}
-import org.apache.spark.sql.execution.HiveResult.{getTimeFormatters, toHiveString, TimeFormatters}
-import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.internal.VariableSubstitution
+import org.apache.spark.sql.execution.HiveResult.{TimeFormatters, getTimeFormatters, toHiveString}
+import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, SQLContext, Row => SparkRow}
 import org.apache.spark.unsafe.types.CalendarInterval
 import org.apache.spark.util.{Utils => SparkUtils}
+
+import java.security.PrivilegedExceptionAction
+import java.util.concurrent.{Executors, RejectedExecutionException, TimeUnit}
+import java.util.{Arrays, Map => JMap}
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.util.control.NonFatal
 
 private[hive] class SparkExecuteStatementOperation(
                                                     val sqlContext: SQLContext,
@@ -247,6 +244,14 @@ private[hive] class SparkExecuteStatementOperation(
 
     if (!runInBackground) {
       execute()
+      log.info("NFER: dummy time2 is " + iter.hasNext.toString())
+      if (confOverlay != null) {
+        confOverlay.forEach((k, v) => {
+          log.info("NFER: key is " + k + " value is " + v)
+        })
+      } else {
+        log.info("NFER: conf_overlay is null")
+      }
     } else {
       val sparkServiceUGI = Utils.getUGI()
 
@@ -327,7 +332,12 @@ private[hive] class SparkExecuteStatementOperation(
       HiveThriftServer2.eventManager.onStatementParsed(statementId,
         result.queryExecution.toString())
       iter = {
-        if (sqlContext.getConf(SQLConf.THRIFTSERVER_INCREMENTAL_COLLECT.key).toBoolean) {
+        if (confOverlay != null) {
+          log.info("NFER result count -> " + result.count())
+          result = result.limit(100 * 1000000)
+          result.write.mode("overwrite").option("header", "true").csv("gs://test-bucket_12_rama/file_name_test.csv");
+          List().iterator
+        } else if (sqlContext.getConf(SQLConf.THRIFTSERVER_INCREMENTAL_COLLECT.key).toBoolean) {
           resultList = None
           result.toLocalIterator.asScala
         } else {
