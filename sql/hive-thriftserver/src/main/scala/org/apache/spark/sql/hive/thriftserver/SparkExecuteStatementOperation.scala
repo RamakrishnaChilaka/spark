@@ -41,15 +41,15 @@ import org.apache.spark.unsafe.types.CalendarInterval
 import org.apache.spark.util.{Utils => SparkUtils}
 
 private[hive] class SparkExecuteStatementOperation(
-    val sqlContext: SQLContext,
-    parentSession: HiveSession,
-    statement: String,
-    confOverlay: JMap[String, String],
-    runInBackground: Boolean = true,
-    queryTimeout: Long)
+                                                    val sqlContext: SQLContext,
+                                                    parentSession: HiveSession,
+                                                    statement: String,
+                                                    confOverlay: JMap[String, String],
+                                                    runInBackground: Boolean = true,
+                                                    queryTimeout: Long)
   extends ExecuteStatementOperation(parentSession, statement, confOverlay, runInBackground)
-  with SparkOperation
-  with Logging {
+    with SparkOperation
+    with Logging {
 
   // If a timeout value `queryTimeout` is specified by users and it is smaller than
   // a global timeout value, we use the user-specified value.
@@ -84,10 +84,10 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   def addNonNullColumnValue(
-      from: SparkRow,
-      to: ArrayBuffer[Any],
-      ordinal: Int,
-      timeFormatters: TimeFormatters): Unit = {
+                             from: SparkRow,
+                             to: ArrayBuffer[Any],
+                             ordinal: Int,
+                             timeFormatters: TimeFormatters): Unit = {
     dataTypes(ordinal) match {
       case StringType =>
         to += from.getString(ordinal)
@@ -121,7 +121,7 @@ private[hive] class SparkExecuteStatementOperation(
           false,
           timeFormatters)
       case _: ArrayType | _: StructType | _: MapType | _: UserDefinedType[_] |
-          _: AnsiIntervalType | _: TimestampNTZType =>
+           _: AnsiIntervalType | _: TimestampNTZType =>
         to += toHiveString((from.get(ordinal), dataTypes(ordinal)), false, timeFormatters)
     }
   }
@@ -136,8 +136,8 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   private def getNextRowSetInternal(
-      order: FetchOrientation,
-      maxRowsL: Long): RowSet = withLocalProperties {
+                                     order: FetchOrientation,
+                                     maxRowsL: Long): RowSet = withLocalProperties {
     log.info(s"Received getNextRowSet request order=${order} and maxRowsL=${maxRowsL} " +
       s"with ${statementId}")
     validateDefaultFetchOrientation(order)
@@ -297,6 +297,11 @@ private[hive] class SparkExecuteStatementOperation(
           override def iterator: Iterator[SparkRow] = result.toLocalIterator.asScala
         })
       } else {
+        val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
+        if (maxNferRows > 0) {
+          logInfo("NFER: Limiting the max rows that can be fetched to " + maxNferRows)
+          result = result.limit(maxNferRows)
+        }
         new ArrayFetchIterator[SparkRow](result.collect())
       }
       dataTypes = result.schema.fields.map(_.dataType)
@@ -315,6 +320,10 @@ private[hive] class SparkExecuteStatementOperation(
         if (currentState.isTerminal) {
           // This may happen if the execution was cancelled, and then closed from another thread.
           logWarning(s"Ignore exception in terminal state with $statementId: $e")
+          e match {
+            case _: HiveSQLException => throw e
+            case _ => throw new HiveSQLException(s"NFER: Your query with $statementId was cancelled, currentState is $currentState", e)
+          }
         } else {
           logError(s"Error executing query with $statementId, currentState $currentState, ", e)
           setState(OperationState.ERROR)
