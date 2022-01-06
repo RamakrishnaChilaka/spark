@@ -296,14 +296,15 @@ private[hive] class SparkExecuteStatementOperation(
         new IterableFetchIterator[SparkRow](new Iterable[SparkRow] {
           override def iterator: Iterator[SparkRow] = result.toLocalIterator.asScala
         })
-      } else if (confOverlay.getOrDefault("write_to_bucket", "false").toBoolean) {
+      } else if (confOverlay != null && confOverlay.getOrDefault("write_to_bucket", "false").toBoolean) {
         // write to gcp bucket
         result = result.limit(100 * 1000000)
         val filePath = confOverlay.getOrDefault("file_path", "").trim
         if (filePath.isEmpty) {
           throw new HiveSQLException("NFER: file_path should be a non_empty path " + statementId)
         }
-        result.write.mode("overwrite").parquet(filePath);
+        logInfo("NFER: get num partitions " + result.rdd.getNumPartitions + " " + statementId)
+        result.write.mode("overwrite").option("compression", "gzip").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
         val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
