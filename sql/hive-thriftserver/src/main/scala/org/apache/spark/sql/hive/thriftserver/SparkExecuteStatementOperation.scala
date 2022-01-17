@@ -296,6 +296,9 @@ private[hive] class SparkExecuteStatementOperation(
         new IterableFetchIterator[SparkRow](new Iterable[SparkRow] {
           override def iterator: Iterator[SparkRow] = result.toLocalIterator.asScala
         })
+      } else if (confOverlay != null && confOverlay.getOrDefault("only_parse", "false").toBoolean) {
+        logInfo(s"NFER: only parsing the statement with statementID $statementId, and statement is $statement")
+        new ArrayFetchIterator[SparkRow](Array())
       } else if (confOverlay != null && confOverlay.getOrDefault("write_to_bucket", "false").toBoolean) {
         // write to gcp bucket
         result = result.limit(100 * 1000000)
