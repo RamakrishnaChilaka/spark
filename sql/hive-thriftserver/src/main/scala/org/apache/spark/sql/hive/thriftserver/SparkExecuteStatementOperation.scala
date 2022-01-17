@@ -299,7 +299,7 @@ private[hive] class SparkExecuteStatementOperation(
       } else if (confOverlay != null && confOverlay.getOrDefault("write_to_bucket", "false").toBoolean) {
         // write to gcp bucket
         result = result.limit(100 * 1000000)
-        val nferFilePath = sqlContext.getConf("spark.sql.nfer_conf.nfer_writer_dir")
+        val nferFilePath = sqlContext.getConf("spark.sql.nfer_conf.nfer_result_write_dir")
         if (nferFilePath.isEmpty) {
           throw new HiveSQLException("NFER: file_path should be a non_empty path " + statementId)
         }
