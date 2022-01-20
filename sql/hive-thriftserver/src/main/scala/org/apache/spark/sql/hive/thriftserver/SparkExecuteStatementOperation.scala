@@ -306,8 +306,12 @@ private[hive] class SparkExecuteStatementOperation(
         if (nferFilePath.isEmpty) {
           throw new HiveSQLException("NFER: file_path should be a non_empty path " + statementId)
         }
+        val userName = confOverlay.getOrDefault("X-NFER-USER", "")
+        if (userName.isEmpty) {
+          throw new HiveSQLException("NFER: X-NFER-USER is empty " + statementId)
+        }
         logInfo("NFER: get num partitions " + result.rdd.getNumPartitions + " " + statementId)
-        val filePath = nferFilePath.concat("/" + statementId)
+        val filePath = nferFilePath.concat("/" + userName + "_" + statementId)
         result.write.mode("overwrite").option("compression", "gzip").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
