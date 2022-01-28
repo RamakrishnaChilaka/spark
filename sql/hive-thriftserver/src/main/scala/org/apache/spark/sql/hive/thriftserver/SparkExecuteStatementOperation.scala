@@ -19,21 +19,18 @@ package org.apache.spark.sql.hive.thriftserver
 
 import java.security.PrivilegedExceptionAction
 import java.util.{Arrays, Map => JMap}
-import java.util.concurrent.{Executors, RejectedExecutionException, TimeUnit}
-
+import java.util.concurrent.{Executors, RejectedExecutionException, Semaphore, TimeUnit}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-
 import org.apache.hadoop.hive.metastore.api.FieldSchema
 import org.apache.hadoop.hive.shims.Utils
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.operation.ExecuteStatementOperation
 import org.apache.hive.service.cli.session.HiveSession
-
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{DataFrame, Row => SparkRow, SQLContext}
-import org.apache.spark.sql.execution.HiveResult.{getTimeFormatters, toHiveString, TimeFormatters}
+import org.apache.spark.sql.{DataFrame, SQLContext, Row => SparkRow}
+import org.apache.spark.sql.execution.HiveResult.{TimeFormatters, getTimeFormatters, toHiveString}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.VariableSubstitution
 import org.apache.spark.sql.types._
@@ -50,6 +47,8 @@ private[hive] class SparkExecuteStatementOperation(
   extends ExecuteStatementOperation(parentSession, statement, confOverlay, runInBackground)
     with SparkOperation
     with Logging {
+
+  private var acquiredLock = false
 
   // If a timeout value `queryTimeout` is specified by users and it is smaller than
   // a global timeout value, we use the user-specified value.
@@ -154,6 +153,12 @@ private[hive] class SparkExecuteStatementOperation(
     }
     resultRowSet.setStartOffset(iter.getPosition)
     if (!iter.hasNext) {
+      logInfo(s"NFER: last statement ${statementId}")
+      if (acquiredLock) {
+        logInfo(s"NFER: releasing lock for ${statementId}")
+        acquiredLock = false
+        SemaphoreImpl.Release(statementId)
+      }
       resultRowSet
     } else {
       val timeFormatters = getTimeFormatters
@@ -195,7 +200,12 @@ private[hive] class SparkExecuteStatementOperation(
       parentSession.getUsername)
     setHasResultSet(true) // avoid no resultset for async run
 
-    if (timeout > 0) {
+    var onlyParse = false
+    if (confOverlay != null) {
+      onlyParse = confOverlay.getOrDefault("only_parse", "false").toBoolean
+    }
+
+    if (timeout > 0 && !onlyParse) { // not creating a cleanup thread when the only_parse is true, i.e., where we only expect to parse the thread
       val timeoutExecutor = Executors.newSingleThreadScheduledExecutor()
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
@@ -293,8 +303,9 @@ private[hive] class SparkExecuteStatementOperation(
       HiveThriftServer2.eventManager.onStatementParsed(statementId,
         result.queryExecution.toString())
       iter = if (sqlContext.getConf(SQLConf.THRIFTSERVER_INCREMENTAL_COLLECT.key).toBoolean || (
-        confOverlay != null && confOverlay.getOrDefault("stream_results", "true").toBoolean
+        confOverlay != null && confOverlay.getOrDefault("stream_results", "false").toBoolean
         )) {
+        logInfo(s"NFER: streaming results ${statementId}")
         new IterableFetchIterator[SparkRow](new Iterable[SparkRow] {
           override def iterator: Iterator[SparkRow] = result.toLocalIterator.asScala
         })
@@ -321,6 +332,12 @@ private[hive] class SparkExecuteStatementOperation(
         if (maxNferRows > 0) {
           logInfo("NFER: Limiting the max rows that can be fetched to " + maxNferRows + " " + statementId)
           result = result.limit(maxNferRows)
+        }
+        if (!result.isEmpty) {
+          assert(!acquiredLock) // acquired lock should always be false here
+          logInfo(s"NFER: acquiring lock for operation handle $statementId")
+          acquiredLock = true
+          SemaphoreImpl.Acquire(statementId)
         }
         new ArrayFetchIterator[SparkRow](result.collect())
       }
@@ -377,6 +394,7 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   override def cancel(): Unit = {
+    logInfo(s"NFER: cancel operation with $statementId")
     synchronized {
       if (!getStatus.getState.isTerminal) {
         logInfo(s"Cancel query with $statementId")
@@ -388,6 +406,7 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   override protected def cleanup(): Unit = {
+    logInfo(s"NFER: cleanup function for ${statementId}")
     if (runInBackground) {
       val backgroundHandle = getBackgroundHandle()
       if (backgroundHandle != null) {
@@ -397,6 +416,11 @@ private[hive] class SparkExecuteStatementOperation(
     // RDDs will be cleaned automatically upon garbage collection.
     if (statementId != null) {
       sqlContext.sparkContext.cancelJobGroup(statementId)
+    }
+    if (acquiredLock) {
+      logInfo(s"NFER: releasing lock for ${statementId} during clean up")
+      acquiredLock = false // required because the lock is released in clean up function as well
+      SemaphoreImpl.Release(statementId)
     }
   }
 }
@@ -414,5 +438,23 @@ object SparkExecuteStatementOperation {
       new FieldSchema(field.name, attrTypeString, field.getComment.getOrElse(""))
     }
     new TableSchema(schema.asJava)
+  }
+}
+
+object SemaphoreImpl extends Logging {
+  private val Semaphore = new Semaphore(10, true) // todo: the 10 here shouldn't be hardcoded
+
+  def Acquire(statementId: String): Unit = {
+    synchronized {
+      logInfo(s"NFER: trying to acquire a lock for ${statementId}")
+      Semaphore.acquire()
+    }
+  }
+
+  def Release(statementId: String): Unit = {
+    synchronized {
+      logInfo(s"NFER: trying to release a lock for ${statementId}")
+      Semaphore.release()
+    }
   }
 }
