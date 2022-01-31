@@ -302,6 +302,7 @@ private[hive] class SparkExecuteStatementOperation(
       logDebug(result.queryExecution.toString())
       HiveThriftServer2.eventManager.onStatementParsed(statementId,
         result.queryExecution.toString())
+      logInfo("NFER: get num partitions " + result.rdd.getNumPartitions + " " + statementId)
       iter = if (sqlContext.getConf(SQLConf.THRIFTSERVER_INCREMENTAL_COLLECT.key).toBoolean || (
         confOverlay != null && confOverlay.getOrDefault("stream_results", "false").toBoolean
         )) {
@@ -323,9 +324,9 @@ private[hive] class SparkExecuteStatementOperation(
         if (userName.isEmpty) {
           throw new HiveSQLException("NFER: X-NFER-USER is empty " + statementId)
         }
-        logInfo("NFER: get num partitions " + result.rdd.getNumPartitions + " " + statementId)
         val filePath = nferFilePath.concat("/" + userName + "_" + statementId)
-        result.write.mode("overwrite").option("compression", "gzip").parquet(filePath);
+        logInfo("NFER: writing to bucket for " + statementId)
+        result.repartition(10).write.mode("overwrite").option("compression", "gzip").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
         val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
