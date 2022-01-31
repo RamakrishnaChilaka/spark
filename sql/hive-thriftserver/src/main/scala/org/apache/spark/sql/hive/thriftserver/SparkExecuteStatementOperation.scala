@@ -326,7 +326,7 @@ private[hive] class SparkExecuteStatementOperation(
         }
         val filePath = nferFilePath.concat("/" + userName + "_" + statementId)
         logInfo("NFER: writing to bucket for " + statementId)
-        result.repartition(10).write.mode("overwrite").option("compression", "gzip").parquet(filePath);
+        result.write.mode("overwrite").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
         val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
