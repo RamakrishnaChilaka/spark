@@ -325,8 +325,9 @@ private[hive] class SparkExecuteStatementOperation(
           throw new HiveSQLException("NFER: X-NFER-USER is empty " + statementId)
         }
         val filePath = nferFilePath.concat("/" + userName + "_" + statementId)
+        logInfo("NFER: after limit, get num partitions " + result.rdd.getNumPartitions + " " + statementId)
         logInfo("NFER: writing to bucket for " + statementId)
-        result.write.mode("overwrite").parquet(filePath);
+        result.repartition(5).write.mode("overwrite").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
         val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
