@@ -41,15 +41,15 @@ import org.apache.spark.unsafe.types.CalendarInterval
 import org.apache.spark.util.{Utils => SparkUtils}
 
 private[hive] class SparkExecuteStatementOperation(
-    val sqlContext: SQLContext,
-    parentSession: HiveSession,
-    statement: String,
-    confOverlay: JMap[String, String],
-    runInBackground: Boolean = true,
-    queryTimeout: Long)
+                                                    val sqlContext: SQLContext,
+                                                    parentSession: HiveSession,
+                                                    statement: String,
+                                                    confOverlay: JMap[String, String],
+                                                    runInBackground: Boolean = true,
+                                                    queryTimeout: Long)
   extends ExecuteStatementOperation(parentSession, statement, confOverlay, runInBackground)
-  with SparkOperation
-  with Logging {
+    with SparkOperation
+    with Logging {
 
   // If a timeout value `queryTimeout` is specified by users and it is smaller than
   // a global timeout value, we use the user-specified value.
@@ -84,10 +84,10 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   def addNonNullColumnValue(
-      from: SparkRow,
-      to: ArrayBuffer[Any],
-      ordinal: Int,
-      timeFormatters: TimeFormatters): Unit = {
+                             from: SparkRow,
+                             to: ArrayBuffer[Any],
+                             ordinal: Int,
+                             timeFormatters: TimeFormatters): Unit = {
     dataTypes(ordinal) match {
       case StringType =>
         to += from.getString(ordinal)
@@ -121,7 +121,7 @@ private[hive] class SparkExecuteStatementOperation(
           false,
           timeFormatters)
       case _: ArrayType | _: StructType | _: MapType | _: UserDefinedType[_] |
-          _: AnsiIntervalType | _: TimestampNTZType =>
+           _: AnsiIntervalType | _: TimestampNTZType =>
         to += toHiveString((from.get(ordinal), dataTypes(ordinal)), false, timeFormatters)
     }
   }
@@ -136,8 +136,8 @@ private[hive] class SparkExecuteStatementOperation(
   }
 
   private def getNextRowSetInternal(
-      order: FetchOrientation,
-      maxRowsL: Long): RowSet = withLocalProperties {
+                                     order: FetchOrientation,
+                                     maxRowsL: Long): RowSet = withLocalProperties {
     log.info(s"Received getNextRowSet request order=${order} and maxRowsL=${maxRowsL} " +
       s"with ${statementId}")
     validateDefaultFetchOrientation(order)
