@@ -153,7 +153,8 @@ public class ThriftHttpServlet extends TServlet {
       LOG.info("NFER: Client username: " + clientUserName);
 
       // Set the thread local username to be used for doAs if true
-      SessionManager.setUserName(clientUserName);
+//      SessionManager.setUserName(clientUserName);// changing this
+      SessionManager.setUserName(request.getHeader("X-NFER-DATABASES")); // todo: this is to pass Authorization on a different header (hack)
 
       // find proxy user if any from query param
       String doAsQueryParam = getDoAsQueryParam(request.getQueryString());
@@ -178,6 +179,8 @@ public class ThriftHttpServlet extends TServlet {
         }
         LOG.info("Cookie added for clientUserName " + clientUserName);
       }
+
+
       super.doPost(request, response);
     }
     catch (HttpAuthenticationException e) {
