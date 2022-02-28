@@ -20,6 +20,7 @@ package org.apache.hive.service.cli.thrift;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -149,7 +150,7 @@ public class ThriftHttpServlet extends TServlet {
           clientUserName = doPasswdAuth(request, authType);
         }
       }
-      LOG.debug("Client username: " + clientUserName);
+      LOG.info("NFER: Client username: " + clientUserName);
 
       // Set the thread local username to be used for doAs if true
       SessionManager.setUserName(clientUserName);
@@ -338,6 +339,7 @@ public class ThriftHttpServlet extends TServlet {
         throw new HttpAuthenticationException(e);
       }
     }
+    LOG.info("NFER: authType " + userName + " "  + authType  + "  " + authType.equalsIgnoreCase(HiveAuthFactory.AuthTypes.NOSASL.toString()));
     return userName;
   }
 
@@ -483,6 +485,7 @@ public class ThriftHttpServlet extends TServlet {
       throw new HttpAuthenticationException("Authorization header received " +
           "from the client does not contain username.");
     }
+    LOG.info("NFER: get user name is " + Arrays.toString(creds)); // this is being split at :
     return creds[0];
   }
 
