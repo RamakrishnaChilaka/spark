@@ -242,7 +242,8 @@ private[hive] class SparkExecuteStatementOperation(
                   execute()
                 }
               } catch {
-                case e: HiveSQLException => setOperationException(e)
+                case
+        e: HiveSQLException => setOperationException(e)
               }
             }
           }
