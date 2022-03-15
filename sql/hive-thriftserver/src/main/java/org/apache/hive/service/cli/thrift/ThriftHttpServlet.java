@@ -196,6 +196,17 @@ public class ThriftHttpServlet extends TServlet {
     }
   }
 
+  @Override
+  protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    String path = request.getRequestURI();
+    LOG.info("NFER: do get is " + path);
+    if (path.equals("/spark_sql/healthcheck")) {
+      response.setStatus(200);
+      return;
+    }
+    super.doGet(request, response);
+  }
+
   /**
    * Retrieves the client name from cookieString. If the cookie does not
    * correspond to a valid client, the function returns null.
