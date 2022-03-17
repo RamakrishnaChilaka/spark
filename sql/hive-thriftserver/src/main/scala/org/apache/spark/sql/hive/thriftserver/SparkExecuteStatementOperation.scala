@@ -27,7 +27,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema
 import org.apache.hadoop.hive.shims.Utils
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.operation.ExecuteStatementOperation
-import org.apache.hive.service.cli.session.HiveSession
+import org.apache.hive.service.cli.session.{HiveSession, SessionManager}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{DataFrame, SQLContext, Row => SparkRow}
 import org.apache.spark.sql.execution.HiveResult.{TimeFormatters, getTimeFormatters, toHiveString}
@@ -227,6 +227,8 @@ private[hive] class SparkExecuteStatementOperation(
     } else {
       val sparkServiceUGI = Utils.getUGI()
 
+      val XNFERDBHeader = SessionManager.getXNFERDBHeader
+
       // Runnable impl to call runInternal asynchronously,
       // from a different thread
       val backgroundOperation = new Runnable() {
@@ -235,6 +237,7 @@ private[hive] class SparkExecuteStatementOperation(
           val doAsAction = new PrivilegedExceptionAction[Unit]() {
             override def run(): Unit = {
               registerCurrentOperationLog()
+              SessionManager.setXNFERDBHeader(XNFERDBHeader)
               try {
                 withLocalProperties {
                   execute()

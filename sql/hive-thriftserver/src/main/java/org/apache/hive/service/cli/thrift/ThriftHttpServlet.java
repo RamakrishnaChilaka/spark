@@ -50,6 +50,7 @@ import org.apache.hive.service.cli.session.SessionManager;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TServlet;
+import org.eclipse.jetty.server.session.Session;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -153,6 +154,9 @@ public class ThriftHttpServlet extends TServlet {
 
       // Set the thread local username to be used for doAs if true
       SessionManager.setUserName(clientUserName);
+
+      // NFER specific additions
+      SessionManager.setXNFERDBHeader(request.getHeader("X-NFER-DBS") + "");
 
       // find proxy user if any from query param
       String doAsQueryParam = getDoAsQueryParam(request.getQueryString());

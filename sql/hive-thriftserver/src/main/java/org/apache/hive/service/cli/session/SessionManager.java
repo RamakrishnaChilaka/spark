@@ -307,6 +307,26 @@ public class SessionManager extends CompositeService {
     return operationManager;
   }
 
+  private static ThreadLocal<String> threadLocalXNFERDBHeader = new ThreadLocal<String>() {
+    @Override
+    protected synchronized String initialValue() {
+        // todo: NFER: to return null or an empty string...
+      return null;
+    }
+  };
+
+  public static void setXNFERDBHeader(String ipAddress) {
+    threadLocalXNFERDBHeader.set(ipAddress);
+  }
+
+  public static void clearXNFERDBHeader() {
+    threadLocalXNFERDBHeader.remove();
+  }
+
+  public static String getXNFERDBHeader() {
+    return threadLocalXNFERDBHeader.get();
+  }
+
   private static ThreadLocal<String> threadLocalIpAddress = new ThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
