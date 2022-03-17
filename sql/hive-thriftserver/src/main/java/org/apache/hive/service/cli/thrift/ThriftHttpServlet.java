@@ -156,7 +156,8 @@ public class ThriftHttpServlet extends TServlet {
       SessionManager.setUserName(clientUserName);
 
       // NFER specific additions
-      SessionManager.setXNFERDBHeader(request.getHeader("X-NFER-DBS") + "");
+      String XNferDBS = request.getHeader("X-NFER-DBS");
+      SessionManager.setXNFERDBHeader(XNferDBS == null ? "" : XNferDBS);
 
       // find proxy user if any from query param
       String doAsQueryParam = getDoAsQueryParam(request.getQueryString());
