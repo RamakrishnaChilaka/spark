@@ -38,6 +38,7 @@ import org.apache.hive.service.cli.operation.OperationManager;
 import org.apache.hive.service.rpc.thrift.TProtocolVersion;
 import org.apache.hive.service.server.HiveServer2;
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup;
+import org.apache.parquet.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -256,6 +257,7 @@ public class SessionManager extends CompositeService {
   public SessionHandle openSession(TProtocolVersion protocol, String username, String password, String ipAddress,
       Map<String, String> sessionConf, boolean withImpersonation, String delegationToken)
           throws HiveSQLException {
+    LOG.info("NFER: open session " + SessionManager.getXNFERDBHeader());
     HiveSession session;
     // If doAs is set to true for HiveServer2, we will create a proxy object for the session impl.
     // Within the proxy object, we wrap the method call in a UserGroupInformation#doAs
@@ -315,8 +317,8 @@ public class SessionManager extends CompositeService {
     }
   };
 
-  public static void setXNFERDBHeader(String ipAddress) {
-    threadLocalXNFERDBHeader.set(ipAddress);
+  public static void setXNFERDBHeader(String XNferDBHeader) {
+    threadLocalXNFERDBHeader.set(XNferDBHeader);
   }
 
   public static void clearXNFERDBHeader() {

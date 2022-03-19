@@ -17,20 +17,24 @@
 
 package org.apache.spark.sql.hive.thriftserver
 
-import scala.util.control.NonFatal
-
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hive.service.cli.SessionHandle
 import org.apache.hive.service.cli.session.SessionManager
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.hive.service.server.HiveServer2
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.hive.thriftserver.ReflectionUtils._
 import org.apache.spark.sql.hive.thriftserver.server.SparkSQLOperationManager
 import org.apache.spark.sql.internal.SQLConf
 
+import scala.util.control.NonFatal
+
+object dummy {
+  def GetXNFERDB(): String = {
+    SessionManager.getXNFERDBHeader
+  }
+}
 
 private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: SQLContext)
   extends SessionManager(hiveServer)
@@ -67,7 +71,11 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
       val hiveSessionState = session.getSessionState
       setConfMap(ctx, hiveSessionState.getOverriddenConfigurations)
       setConfMap(ctx, hiveSessionState.getHiveVariables)
-      if (sessionConf != null && sessionConf.containsKey("use:database")) {
+      if (SessionManager.getXNFERDBHeader.nonEmpty) {
+        val firstDB = SessionManager.getXNFERDBHeader.split("\\$").map(_.trim).map(_.toLowerCase).apply(0)
+        log.info(s"NFER: setting ${firstDB} as the default database")
+        ctx.sql(s"use ${firstDB}")
+      } else if (sessionConf != null && sessionConf.containsKey("use:database")) {
         ctx.sql(s"use ${sessionConf.get("use:database")}")
       }
       sparkSqlOperationManager.sessionToContexts.put(sessionHandle, ctx)
