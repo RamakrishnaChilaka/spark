@@ -228,6 +228,7 @@ private[hive] class SparkExecuteStatementOperation(
       val sparkServiceUGI = Utils.getUGI()
 
       val XNFERDBHeader = SessionManager.getXNFERDBHeader
+      val XNFERVersionCondition = SessionManager.getXNFERVersionCondition
 
       // Runnable impl to call runInternal asynchronously,
       // from a different thread
@@ -238,6 +239,7 @@ private[hive] class SparkExecuteStatementOperation(
             override def run(): Unit = {
               registerCurrentOperationLog()
               SessionManager.setXNFERDBHeader(XNFERDBHeader)
+              SessionManager.setXNFERVersionCondition(XNFERVersionCondition)
               try {
                 withLocalProperties {
                   execute()

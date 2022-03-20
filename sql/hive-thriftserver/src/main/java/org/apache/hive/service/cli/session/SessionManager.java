@@ -329,6 +329,27 @@ public class SessionManager extends CompositeService {
     return threadLocalXNFERDBHeader.get();
   }
 
+  private static ThreadLocal<String> threadLocalXNFERVersionCondition = new ThreadLocal<String>() {
+    @Override
+    protected synchronized String initialValue() {
+      // todo: NFER: to return null or an empty string...
+      return "";
+    }
+  };
+
+  public static void setXNFERVersionCondition(String XNferVersionHeader) {
+    threadLocalXNFERVersionCondition.set(XNferVersionHeader);
+  }
+
+  public static void clearXNFERVersionCondition() {
+    threadLocalXNFERVersionCondition.remove();
+  }
+
+  public static String getXNFERVersionCondition() {
+    return threadLocalXNFERVersionCondition.get();
+  }
+
+
   private static ThreadLocal<String> threadLocalIpAddress = new ThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
