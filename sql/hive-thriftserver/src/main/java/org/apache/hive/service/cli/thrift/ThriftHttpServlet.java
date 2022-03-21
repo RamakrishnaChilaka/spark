@@ -160,10 +160,17 @@ public class ThriftHttpServlet extends TServlet {
       LOG.info("NFER: X-NFER-DBS " + XNferDBS);
       SessionManager.setXNFERDBHeader(XNferDBS == null ? "" : XNferDBS.trim());
 
-      String XNferVersion = request.getHeader("X-NFER-Version");
+      String XNferVersion = request.getHeader("X-NFER-VERSION");
       XNferVersion = XNferVersion == null ? "" : XNferVersion.trim();
-      LOG.info("NFER: X-NFER-Version " + XNferVersion);
-      SessionManager.setXNFERVersionCondition(String.format("version <= %s and ( updated_by > %s || updated_by == 0)", XNferVersion, XNferVersion));
+      if (XNferVersion.isEmpty() || XNferVersion.equals("0")) {
+          XNferVersion = "updated_by == 0";
+      } else if (XNferVersion.equals("NFER_DEBUG")) {
+          XNferVersion = "";
+      } else {
+          XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0)", XNferVersion, XNferVersion);
+      }
+      LOG.info("NFER: X-NFER-VERSION " + XNferVersion);
+      SessionManager.setXNFERVersionCondition(XNferVersion);
 
       // find proxy user if any from query param
       String doAsQueryParam = getDoAsQueryParam(request.getQueryString());
