@@ -167,7 +167,7 @@ public class ThriftHttpServlet extends TServlet {
       } else if (XNferVersion.isEmpty() || XNferVersion.equals("NFER_DEBUG")) {
           XNferVersion = "";
       } else {
-          XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0)", XNferVersion, XNferVersion);
+          XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0 )", XNferVersion, XNferVersion);
       }
       LOG.info("NFER: X-NFER-VERSION " + XNferVersion);
       SessionManager.setXNFERVersionCondition(XNferVersion);
