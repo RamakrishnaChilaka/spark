@@ -162,9 +162,9 @@ public class ThriftHttpServlet extends TServlet {
 
       String XNferVersion = request.getHeader("X-NFER-VERSION");
       XNferVersion = XNferVersion == null ? "" : XNferVersion.trim();
-      if (XNferVersion.isEmpty() || XNferVersion.equals("0")) {
+      if (XNferVersion.equals("0")) {
           XNferVersion = "updated_by == 0";
-      } else if (XNferVersion.equals("NFER_DEBUG")) {
+      } else if (XNferVersion.isEmpty() || XNferVersion.equals("NFER_DEBUG")) {
           XNferVersion = "";
       } else {
           XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0)", XNferVersion, XNferVersion);
