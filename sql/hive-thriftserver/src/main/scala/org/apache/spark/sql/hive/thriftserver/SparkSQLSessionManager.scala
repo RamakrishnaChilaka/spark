@@ -78,7 +78,7 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
         log.info(s"NFER: setting ${firstDB} as the default database")
         ctx.sql(s"use ${firstDB}")
       } else if (sessionConf != null && sessionConf.containsKey("use:database")) {
-        ctx.sql(s"use ${sessionConf.get("use:database")}")
+        ctx.sql(s"use ${sessionConf.get("use:database")}") // NFER: this might be a security hole
       }
       sparkSqlOperationManager.sessionToContexts.put(sessionHandle, ctx)
       sessionHandle
