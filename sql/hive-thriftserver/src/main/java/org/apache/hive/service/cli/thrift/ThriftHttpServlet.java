@@ -47,6 +47,7 @@ import org.apache.hive.service.auth.HttpAuthenticationException;
 import org.apache.hive.service.auth.PasswdAuthenticationProvider;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.session.SessionManager;
+import org.apache.parquet.Log;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TServlet;
@@ -158,7 +159,10 @@ public class ThriftHttpServlet extends TServlet {
       // NFER specific additions
       String XNferDBS = request.getHeader("X-NFER-DBS");
       LOG.info("NFER: X-NFER-DBS " + XNferDBS);
-      SessionManager.setXNFERDBHeader(XNferDBS == null ? "" : XNferDBS.trim());
+      if (XNferDBS == null || XNferDBS.length() == 0) {
+        throw new HttpAuthenticationException("X-NFER-DBS cannot be empty or null");
+      }
+      SessionManager.setXNFERDBHeader(XNferDBS.trim());
 
       String XNferVersion = request.getHeader("X-NFER-VERSION");
       XNferVersion = XNferVersion == null ? "" : XNferVersion.trim();
