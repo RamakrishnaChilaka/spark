@@ -33,6 +33,7 @@ import javax.ws.rs.core.NewCookie;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.shims.HadoopShims.KerberosNameShim;
@@ -167,11 +168,14 @@ public class ThriftHttpServlet extends TServlet {
       String XNferVersion = request.getHeader("X-NFER-VERSION");
       XNferVersion = XNferVersion == null ? "" : XNferVersion.trim();
       if (XNferVersion.equals("0")) {
-          XNferVersion = "updated_by == 0";
+        XNferVersion = "updated_by == 0";
       } else if (XNferVersion.isEmpty() || XNferVersion.equals("NFER_DEBUG")) {
-          XNferVersion = "";
+        XNferVersion = "";
+      } else if (!NumberUtils.isCreatable(XNferVersion)) {
+        // checking if it is a valid int or float
+        throw new HttpAuthenticationException("X-NFER-VERSION should have a valid number");
       } else {
-          XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0 )", XNferVersion, XNferVersion);
+        XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0 )", XNferVersion, XNferVersion);
       }
       LOG.info("NFER: X-NFER-VERSION " + XNferVersion);
       SessionManager.setXNFERVersionCondition(XNferVersion);
