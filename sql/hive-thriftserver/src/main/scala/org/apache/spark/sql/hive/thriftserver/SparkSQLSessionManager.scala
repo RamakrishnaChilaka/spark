@@ -73,7 +73,6 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
       setConfMap(ctx, hiveSessionState.getHiveVariables)
       if (SessionManager.getXNFERDBHeader.nonEmpty) {
         val DBs = SessionManager.getXNFERDBHeader.split("\\$").map(_.trim).map(_.toLowerCase)
-        scala.util.Sorting.quickSort(DBs)
         val firstDB = DBs.apply(0)
         log.info(s"NFER: setting ${firstDB} as the default database")
         ctx.sql(s"use ${firstDB}")
