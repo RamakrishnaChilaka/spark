@@ -161,6 +161,7 @@ public class ThriftHttpServlet extends TServlet {
       if (XNferDBS == null || XNferDBS.length() == 0) {
         throw new HttpAuthenticationException("X-NFER-DBS cannot be empty or null");
       }
+      XNferDBS += "";
       SessionManager.setXNFERDBHeader(XNferDBS.trim());
 
       String XNferVersion = request.getHeader("X-NFER-VERSION");
