@@ -157,9 +157,10 @@ public class ThriftHttpServlet extends TServlet {
 
       // NFER specific additions
       String XNferDBS = request.getHeader("X-NFER-SPARK-SQL-DBS");
+      XNferDBS = XNferDBS == null ? "" : XNferDBS.trim();
       LOG.info("NFER: X-NFER-DBS " + XNferDBS);
-      if (XNferDBS == null || XNferDBS.length() == 0) {
-         throw new HttpAuthenticationException("X-NFER-SPARK_SQL-DBS cannot be empty or null");
+      if (XNferDBS.length() == 0) {
+         throw new HttpAuthenticationException("X-NFER-SPARK-SQL-DBS cannot be empty or null");
       }
       SessionManager.setXNFERDBHeader(XNferDBS.trim());
 

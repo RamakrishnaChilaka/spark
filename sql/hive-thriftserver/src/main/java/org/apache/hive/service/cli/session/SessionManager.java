@@ -313,7 +313,7 @@ public class SessionManager extends CompositeService {
     @Override
     protected synchronized String initialValue() {
         // todo: NFER: to return null or an empty string...
-      return null;
+      return "";
     }
   };
 
