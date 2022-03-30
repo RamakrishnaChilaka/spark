@@ -257,7 +257,6 @@ public class SessionManager extends CompositeService {
   public SessionHandle openSession(TProtocolVersion protocol, String username, String password, String ipAddress,
       Map<String, String> sessionConf, boolean withImpersonation, String delegationToken)
           throws HiveSQLException {
-    LOG.info("NFER: open session " + SessionManager.getXNFERDBHeader());
     HiveSession session;
     // If doAs is set to true for HiveServer2, we will create a proxy object for the session impl.
     // Within the proxy object, we wrap the method call in a UserGroupInformation#doAs
@@ -309,7 +308,7 @@ public class SessionManager extends CompositeService {
     return operationManager;
   }
 
-  private static ThreadLocal<String> threadLocalXNFERDBHeader = new ThreadLocal<String>() {
+  private static InheritableThreadLocal<String> threadLocalXNFERDBHeader = new InheritableThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
         // todo: NFER: to return null or an empty string...
@@ -329,7 +328,7 @@ public class SessionManager extends CompositeService {
     return threadLocalXNFERDBHeader.get();
   }
 
-  private static ThreadLocal<String> threadLocalXNFERVersionCondition = new ThreadLocal<String>() {
+  private static InheritableThreadLocal<String> threadLocalXNFERVersionCondition = new InheritableThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
       // todo: NFER: to return null or an empty string...
