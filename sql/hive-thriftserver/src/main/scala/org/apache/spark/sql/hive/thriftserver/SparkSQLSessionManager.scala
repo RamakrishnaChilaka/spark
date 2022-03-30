@@ -30,12 +30,6 @@ import org.apache.spark.sql.internal.SQLConf
 
 import scala.util.control.NonFatal
 
-object dummy {
-  def GetXNFERDB(): String = {
-    SessionManager.getXNFERDBHeader
-  }
-}
-
 private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: SQLContext)
   extends SessionManager(hiveServer)
   with ReflectedCompositeService with Logging {
