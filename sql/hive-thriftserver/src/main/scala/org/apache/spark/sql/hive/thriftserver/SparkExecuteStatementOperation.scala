@@ -181,6 +181,20 @@ private[hive] class SparkExecuteStatementOperation(
 
   def getResultSetSchema: TableSchema = resultSchema
 
+  /**
+   * Normalize column name by replacing invalid characters with underscore
+   * and strips accents
+   *
+   * @param columns dataframe column names list
+   * @return the list of normalized column names
+   */
+  def normalize(columns: Seq[String]): Seq[String] = {
+    columns.map {
+      c =>
+        org.apache.commons.lang3.StringUtils.stripAccents(c.replaceAll("[ ,;{}()\n\t=]+", "_"))
+    }
+  }
+
   override def runInternal(): Unit = {
     setState(OperationState.PENDING)
     val redactedStatement = SparkUtils.redact(sqlContext.conf.stringRedactionPattern, statement)
@@ -322,8 +336,8 @@ private[hive] class SparkExecuteStatementOperation(
           throw new HiveSQLException("NFER: X-NFER-USER is empty " + statementId)
         }
         val filePath = nferFilePath.concat("/" + userName + "_" + statementId)
-        logInfo("NFER: after limit, get num partitions " + result.rdd.getNumPartitions + " " + statementId) // this will be slower, as it needs to count numPartitions
         logInfo("NFER: writing to bucket for " + statementId)
+        result = result.toDF(normalize(result.columns): _*)
         result.repartition(5).write.mode("overwrite").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
