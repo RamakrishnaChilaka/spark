@@ -195,6 +195,22 @@ private[hive] class SparkExecuteStatementOperation(
     }
   }
 
+  def deDuplicateColumns(columns: Seq[String]): Seq[String] = {
+    var existingCol = Map[String, Int]()
+    columns.map {
+      c => {
+        val colCount = existingCol.getOrElse(c, -1) + 1
+        val renamedCol = if (colCount != 0) {
+          c.concat("_".concat(colCount.toString))
+        } else {
+          c
+        }
+        existingCol += (c -> colCount)
+        renamedCol
+      }
+    }
+  }
+
   override def runInternal(): Unit = {
     setState(OperationState.PENDING)
     val redactedStatement = SparkUtils.redact(sqlContext.conf.stringRedactionPattern, statement)
@@ -338,6 +354,7 @@ private[hive] class SparkExecuteStatementOperation(
         val filePath = nferFilePath.concat("/" + userName + "_" + statementId)
         logInfo("NFER: writing to bucket for " + statementId)
         result = result.toDF(normalize(result.columns): _*)
+        result = result.toDF(deDuplicateColumns(result.columns): _*)
         result.repartition(5).write.mode("overwrite").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
