@@ -388,7 +388,7 @@ public class HiveSessionImpl implements HiveSession {
       lastIdleTime = 0;
     }
     if (!userAccess) {
-      LOG.info("release " + getSessionHandle() + opHandleSet.size() + opHandleSet);
+      LOG.info("NFER: Release " + getSessionHandle() + opHandleSet.size() + opHandleSet);
     }
   }
 
