@@ -44,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * SessionManager.
- *
  */
 public class SessionManager extends CompositeService {
 
@@ -52,7 +51,7 @@ public class SessionManager extends CompositeService {
   public static final String HIVERCFILE = ".hiverc";
   private HiveConf hiveConf;
   private final Map<SessionHandle, HiveSession> handleToSession =
-      new ConcurrentHashMap<SessionHandle, HiveSession>();
+    new ConcurrentHashMap<SessionHandle, HiveSession>();
   private final OperationManager operationManager = new OperationManager();
   private ThreadPoolExecutor backgroundOperationPool;
   private boolean isOperationLogEnabled;
@@ -89,42 +88,42 @@ public class SessionManager extends CompositeService {
     int poolQueueSize = hiveConf.getIntVar(ConfVars.HIVE_SERVER2_ASYNC_EXEC_WAIT_QUEUE_SIZE);
     LOG.info("HiveServer2: Background operation thread wait queue size: " + poolQueueSize);
     long keepAliveTime = HiveConf.getTimeVar(
-        hiveConf, ConfVars.HIVE_SERVER2_ASYNC_EXEC_KEEPALIVE_TIME, TimeUnit.SECONDS);
+      hiveConf, ConfVars.HIVE_SERVER2_ASYNC_EXEC_KEEPALIVE_TIME, TimeUnit.SECONDS);
     LOG.info(
-        "HiveServer2: Background operation thread keepalive time: " + keepAliveTime + " seconds");
+      "HiveServer2: Background operation thread keepalive time: " + keepAliveTime + " seconds");
 
     // Create a thread pool with #poolSize threads
     // Threads terminate when they are idle for more than the keepAliveTime
     // A bounded blocking queue is used to queue incoming operations, if #operations > poolSize
     String threadPoolName = "HiveServer2-Background-Pool";
     backgroundOperationPool = new ThreadPoolExecutor(poolSize, poolSize,
-        keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(poolQueueSize),
-        new ThreadFactoryWithGarbageCleanup(threadPoolName));
+      keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(poolQueueSize),
+      new ThreadFactoryWithGarbageCleanup(threadPoolName));
     backgroundOperationPool.allowCoreThreadTimeOut(true);
 
     checkInterval = HiveConf.getTimeVar(
-        hiveConf, ConfVars.HIVE_SERVER2_SESSION_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+      hiveConf, ConfVars.HIVE_SERVER2_SESSION_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
     sessionTimeout = HiveConf.getTimeVar(
-        hiveConf, ConfVars.HIVE_SERVER2_IDLE_SESSION_TIMEOUT, TimeUnit.MILLISECONDS);
+      hiveConf, ConfVars.HIVE_SERVER2_IDLE_SESSION_TIMEOUT, TimeUnit.MILLISECONDS);
     checkOperation = HiveConf.getBoolVar(hiveConf,
-        ConfVars.HIVE_SERVER2_IDLE_SESSION_CHECK_OPERATION);
+      ConfVars.HIVE_SERVER2_IDLE_SESSION_CHECK_OPERATION);
   }
 
   private void initOperationLogRootDir() {
     operationLogRootDir = new File(
-        hiveConf.getVar(ConfVars.HIVE_SERVER2_LOGGING_OPERATION_LOG_LOCATION));
+      hiveConf.getVar(ConfVars.HIVE_SERVER2_LOGGING_OPERATION_LOG_LOCATION));
     isOperationLogEnabled = true;
 
     if (operationLogRootDir.exists() && !operationLogRootDir.isDirectory()) {
       LOG.warn("The operation log root directory exists, but it is not a directory: " +
-          operationLogRootDir.getAbsolutePath());
+        operationLogRootDir.getAbsolutePath());
       isOperationLogEnabled = false;
     }
 
     if (!operationLogRootDir.exists()) {
       if (!operationLogRootDir.mkdirs()) {
         LOG.warn("Unable to create operation log root directory: " +
-            operationLogRootDir.getAbsolutePath());
+          operationLogRootDir.getAbsolutePath());
         isOperationLogEnabled = false;
       }
     }
@@ -135,7 +134,7 @@ public class SessionManager extends CompositeService {
         FileUtils.forceDeleteOnExit(operationLogRootDir);
       } catch (IOException e) {
         LOG.warn("Failed to schedule cleanup HS2 operation logging root dir: " +
-            operationLogRootDir.getAbsolutePath(), e);
+          operationLogRootDir.getAbsolutePath(), e);
       }
     }
   }
@@ -163,10 +162,10 @@ public class SessionManager extends CompositeService {
               break;
             }
             if (sessionTimeout > 0 && session.getLastAccessTime() + sessionTimeout <= current
-                && (!checkOperation || session.getNoOperationTime() > sessionTimeout)) {
+              && (!checkOperation || session.getNoOperationTime() > sessionTimeout)) {
               SessionHandle handle = session.getSessionHandle();
               LOG.warn("Session " + handle + " is Timed-out (last access : " +
-                  new Date(session.getLastAccessTime()) + ") and will be closed");
+                new Date(session.getLastAccessTime()) + ") and will be closed");
               try {
                 closeSession(handle);
               } catch (HiveSQLException e) {
@@ -207,12 +206,12 @@ public class SessionManager extends CompositeService {
     if (backgroundOperationPool != null) {
       backgroundOperationPool.shutdown();
       long timeout = hiveConf.getTimeVar(
-          ConfVars.HIVE_SERVER2_ASYNC_EXEC_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
+        ConfVars.HIVE_SERVER2_ASYNC_EXEC_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
       try {
         backgroundOperationPool.awaitTermination(timeout, TimeUnit.SECONDS);
       } catch (InterruptedException e) {
         LOG.warn("HIVE_SERVER2_ASYNC_EXEC_SHUTDOWN_TIMEOUT = " + timeout +
-            " seconds has been exceeded. RUNNING background operations will be shut down", e);
+          " seconds has been exceeded. RUNNING background operations will be shut down", e);
       }
       backgroundOperationPool = null;
     }
@@ -225,13 +224,13 @@ public class SessionManager extends CompositeService {
         FileUtils.forceDelete(operationLogRootDir);
       } catch (Exception e) {
         LOG.warn("Failed to cleanup root dir of HS2 logging: " + operationLogRootDir
-            .getAbsolutePath(), e);
+          .getAbsolutePath(), e);
       }
     }
   }
 
   public SessionHandle openSession(TProtocolVersion protocol, String username, String password, String ipAddress,
-      Map<String, String> sessionConf) throws HiveSQLException {
+                                   Map<String, String> sessionConf) throws HiveSQLException {
     return openSession(protocol, username, password, ipAddress, sessionConf, false, null);
   }
 
@@ -240,7 +239,7 @@ public class SessionManager extends CompositeService {
    * The username passed to this method is the effective username.
    * If withImpersonation is true (==doAs true) we wrap all the calls in HiveSession
    * within a UGI.doAs, where UGI corresponds to the effective user.
-   *
+   * <p>
    * Please see {@code org.apache.hive.service.cli.thrift.ThriftCLIService.getUserName()} for
    * more details.
    *
@@ -255,14 +254,14 @@ public class SessionManager extends CompositeService {
    * @throws HiveSQLException
    */
   public SessionHandle openSession(TProtocolVersion protocol, String username, String password, String ipAddress,
-      Map<String, String> sessionConf, boolean withImpersonation, String delegationToken)
-          throws HiveSQLException {
+                                   Map<String, String> sessionConf, boolean withImpersonation, String delegationToken)
+    throws HiveSQLException {
     HiveSession session;
     // If doAs is set to true for HiveServer2, we will create a proxy object for the session impl.
     // Within the proxy object, we wrap the method call in a UserGroupInformation#doAs
     if (withImpersonation) {
       HiveSessionImplwithUGI sessionWithUGI = new HiveSessionImplwithUGI(protocol, username, password,
-          hiveConf, ipAddress, delegationToken);
+        hiveConf, ipAddress, delegationToken);
       session = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi());
       sessionWithUGI.setProxySession(session);
     } else {
@@ -289,11 +288,12 @@ public class SessionManager extends CompositeService {
   }
 
   public void closeSession(SessionHandle sessionHandle) throws HiveSQLException {
-    LOG.info("NFER: SessionManager close session " + sessionHandle + handleToSession.size());
+    LOG.info("NFER: SessionManager close session before " + sessionHandle + " " + handleToSession.size());
     HiveSession session = handleToSession.remove(sessionHandle);
     if (session == null) {
       throw new HiveSQLException("Session does not exist!");
     }
+    LOG.info("NFER: SessionManager close session after " + sessionHandle + " " + handleToSession.size());
     session.close();
   }
 
@@ -332,7 +332,7 @@ public class SessionManager extends CompositeService {
   private static InheritableThreadLocal<String> threadLocalXNFERDBHeader = new InheritableThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
-        // todo: NFER: to return null or an empty string...
+      // todo: NFER: to return null or an empty string...
       return "";
     }
   };
@@ -389,7 +389,7 @@ public class SessionManager extends CompositeService {
     return threadLocalIpAddress.get();
   }
 
-  private static ThreadLocal<String> threadLocalUserName = new ThreadLocal<String>(){
+  private static ThreadLocal<String> threadLocalUserName = new ThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
       return null;
@@ -408,7 +408,7 @@ public class SessionManager extends CompositeService {
     return threadLocalUserName.get();
   }
 
-  private static ThreadLocal<String> threadLocalProxyUserName = new ThreadLocal<String>(){
+  private static ThreadLocal<String> threadLocalProxyUserName = new ThreadLocal<String>() {
     @Override
     protected synchronized String initialValue() {
       return null;

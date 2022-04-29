@@ -32,7 +32,7 @@ import scala.util.control.NonFatal
 
 private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: SQLContext)
   extends SessionManager(hiveServer)
-  with ReflectedCompositeService with Logging {
+    with ReflectedCompositeService with Logging {
 
   private lazy val sparkSqlOperationManager = new SparkSQLOperationManager()
 
@@ -42,16 +42,16 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
   }
 
   override def openSession(
-      protocol: TProtocolVersion,
-      username: String,
-      passwd: String,
-      ipAddress: String,
-      sessionConf: java.util.Map[String, String],
-      withImpersonation: Boolean,
-      delegationToken: String): SessionHandle = {
+                            protocol: TProtocolVersion,
+                            username: String,
+                            passwd: String,
+                            ipAddress: String,
+                            sessionConf: java.util.Map[String, String],
+                            withImpersonation: Boolean,
+                            delegationToken: String): SessionHandle = {
     val sessionHandle =
       super.openSession(protocol, username, passwd, ipAddress, sessionConf, withImpersonation,
-          delegationToken)
+        delegationToken)
     try {
       val session = super.getSession(sessionHandle)
       HiveThriftServer2.eventManager.onSessionCreated(
@@ -89,12 +89,13 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
-    log.info("NFER: SQLSessionManager close session " + sessionHandle + sparkSqlOperationManager.sessionToContexts.size().toString)
+    log.info("NFER: SQLSessionManager close session before " + sessionHandle + " " + sparkSqlOperationManager.sessionToContexts.size().toString)
     HiveThriftServer2.eventManager.onSessionClosed(sessionHandle.getSessionId.toString)
     val ctx = sparkSqlOperationManager.sessionToContexts.getOrDefault(sessionHandle, sqlContext)
     ctx.sparkSession.sessionState.catalog.getTempViewNames().foreach(ctx.uncacheTable)
     super.closeSession(sessionHandle)
     sparkSqlOperationManager.sessionToContexts.remove(sessionHandle)
+    log.info("NFER: SQLSessionManager close session after " + sessionHandle + " " + sparkSqlOperationManager.sessionToContexts.size().toString)
   }
 
   def setConfMap(conf: SQLContext, confMap: java.util.Map[String, String]): Unit = {
