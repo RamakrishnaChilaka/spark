@@ -289,6 +289,7 @@ public class SessionManager extends CompositeService {
   }
 
   public void closeSession(SessionHandle sessionHandle) throws HiveSQLException {
+    LOG.info("NFER: SessionManager close session " + sessionHandle + handleToSession.size());
     HiveSession session = handleToSession.remove(sessionHandle);
     if (session == null) {
       throw new HiveSQLException("Session does not exist!");
@@ -306,6 +307,26 @@ public class SessionManager extends CompositeService {
 
   public OperationManager getOperationManager() {
     return operationManager;
+  }
+
+  private static ThreadLocal<String> threadLocalXNFERUser = new InheritableThreadLocal<String>() {
+    @Override
+    protected synchronized String initialValue() {
+      // todo: NFER: to return null or an empty string...
+      return "";
+    }
+  };
+
+  public static void setXNFERUser(String XNFERUser) {
+    threadLocalXNFERUser.set(XNFERUser);
+  }
+
+  public static void clearXNFERUser() {
+    threadLocalXNFERUser.remove();
+  }
+
+  public static String getXNFERUser() {
+    return threadLocalXNFERUser.get();
   }
 
   private static InheritableThreadLocal<String> threadLocalXNFERDBHeader = new InheritableThreadLocal<String>() {

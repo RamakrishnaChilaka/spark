@@ -160,7 +160,7 @@ public class ThriftHttpServlet extends TServlet {
       XNferDBS = XNferDBS == null ? "" : XNferDBS.trim();
       LOG.info("NFER: X-NFER-DBS " + XNferDBS);
       if (XNferDBS.length() == 0) {
-         throw new HttpAuthenticationException("X-NFER-SPARK-SQL-DBS cannot be empty or null");
+        throw new HttpAuthenticationException("X-NFER-SPARK-SQL-DBS cannot be empty or null");
       }
       SessionManager.setXNFERDBHeader(XNferDBS.trim());
 
@@ -178,6 +178,11 @@ public class ThriftHttpServlet extends TServlet {
       }
       LOG.info("NFER: X-NFER-VERSION " + XNferVersion);
       SessionManager.setXNFERVersionCondition(XNferVersion);
+
+      String XNferUser = request.getHeader("X-NFER-USER");
+      XNferUser = XNferUser == null ? "" : XNferUser.trim();
+      LOG.info("NFER: X-NFER-USER " + XNferUser);
+      SessionManager.setXNFERUser(XNferUser);
 
       // find proxy user if any from query param
       String doAsQueryParam = getDoAsQueryParam(request.getQueryString());
@@ -218,6 +223,7 @@ public class ThriftHttpServlet extends TServlet {
       SessionManager.clearProxyUserName();
       SessionManager.clearXNFERDBHeader();
       SessionManager.clearXNFERVersionCondition();
+      SessionManager.clearXNFERUser();
     }
   }
 
