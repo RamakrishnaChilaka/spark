@@ -214,7 +214,7 @@ private[hive] class SparkExecuteStatementOperation(
   override def runInternal(): Unit = {
     setState(OperationState.PENDING)
     val redactedStatement = SparkUtils.redact(sqlContext.conf.stringRedactionPattern, statement)
-    logInfo(s"Submitting query '$redactedStatement' with $statementId")
+    logInfo(s"Submitting query from ${SessionManager.getXNFERUser} '$redactedStatement' with $statementId")
     HiveThriftServer2.eventManager.onStatementStart(
       statementId,
       parentSession.getSessionHandle.getSessionId.toString,
@@ -252,6 +252,7 @@ private[hive] class SparkExecuteStatementOperation(
 
       val XNFERDBHeader = SessionManager.getXNFERDBHeader
       val XNFERVersionCondition = SessionManager.getXNFERVersionCondition
+      val XNFERUser = SessionManager.getXNFERUser
 
       // Runnable impl to call runInternal asynchronously,
       // from a different thread
@@ -263,6 +264,7 @@ private[hive] class SparkExecuteStatementOperation(
               registerCurrentOperationLog()
               SessionManager.setXNFERDBHeader(XNFERDBHeader)
               SessionManager.setXNFERVersionCondition(XNFERVersionCondition)
+              SessionManager.setXNFERUser(XNFERUser)
               try {
                 withLocalProperties {
                   execute()

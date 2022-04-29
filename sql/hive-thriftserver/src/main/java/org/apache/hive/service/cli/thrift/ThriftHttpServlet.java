@@ -179,6 +179,11 @@ public class ThriftHttpServlet extends TServlet {
       LOG.info("NFER: X-NFER-VERSION " + XNferVersion);
       SessionManager.setXNFERVersionCondition(XNferVersion);
 
+      String XNferUser = request.getHeader("X-NFER-USER");
+      XNferUser = XNferUser == null ? "" : XNferUser.trim();
+      LOG.info("NFER: X-NFER-USER " + XNferUser);
+      SessionManager.setXNFERUser(XNferUser);
+
       // find proxy user if any from query param
       String doAsQueryParam = getDoAsQueryParam(request.getQueryString());
       if (doAsQueryParam != null) {
@@ -218,6 +223,7 @@ public class ThriftHttpServlet extends TServlet {
       SessionManager.clearProxyUserName();
       SessionManager.clearXNFERDBHeader();
       SessionManager.clearXNFERVersionCondition();
+      SessionManager.clearXNFERUser();
     }
   }
 
