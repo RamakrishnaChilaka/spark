@@ -166,13 +166,13 @@ public class ThriftHttpServlet extends TServlet {
 
       String XNferVersion = request.getHeader("X-NFER-VERSION");
       XNferVersion = XNferVersion == null ? "" : XNferVersion.trim();
-      if (XNferVersion.equals("0")) {
+      if (XNferVersion.equals("NFER_VERSION_LATEST")) {
         XNferVersion = "updated_by == 0";
-      } else if (XNferVersion.isEmpty() || XNferVersion.equals("NFER_DEBUG")) {
-        XNferVersion = "";
+      } else if (XNferVersion.equals("NFER_VERSION_DEBUG")) {
+        XNferVersion = "NFER_VERSION_DEBUG";
       } else if (!NumberUtils.isCreatable(XNferVersion)) {
         // checking if it is a valid int or float
-        throw new HttpAuthenticationException("X-NFER-VERSION should have a valid number");
+        throw new HttpAuthenticationException("X-NFER-VERSION should have a valid floating number");
       } else {
         XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0 )", XNferVersion, XNferVersion);
       }
