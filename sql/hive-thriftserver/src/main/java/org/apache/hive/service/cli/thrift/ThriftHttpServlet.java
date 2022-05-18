@@ -166,6 +166,7 @@ public class ThriftHttpServlet extends TServlet {
 
       String XNferVersion = request.getHeader("X-NFER-VERSION");
       XNferVersion = XNferVersion == null ? "" : XNferVersion.trim();
+      LOG.info("NFER: X-NFER-VERSION before " + XNferVersion);
       if (XNferVersion.equals("NFER_VERSION_LATEST")) {
         XNferVersion = "updated_by == 0";
       } else if (XNferVersion.equals("NFER_VERSION_DEBUG")) {
@@ -176,7 +177,7 @@ public class ThriftHttpServlet extends TServlet {
       } else {
         XNferVersion = String.format("version <= %s and ( updated_by > %s or updated_by == 0 )", XNferVersion, XNferVersion);
       }
-      LOG.info("NFER: X-NFER-VERSION " + XNferVersion);
+      LOG.info("NFER: X-NFER-VERSION after " + XNferVersion);
       SessionManager.setXNFERVersionCondition(XNferVersion);
 
       String XNferUser = request.getHeader("X-NFER-USER");
