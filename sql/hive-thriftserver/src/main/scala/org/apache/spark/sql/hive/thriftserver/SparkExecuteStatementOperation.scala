@@ -198,14 +198,15 @@ private[hive] class SparkExecuteStatementOperation(
   def deDuplicateColumns(columns: Seq[String]): Seq[String] = {
     var existingCol = Map[String, Int]()
     columns.map {
-      c => {
-        val colCount = existingCol.getOrElse(c, -1) + 1
+      column => {
+        val columnLowerCase = column.toLowerCase()
+        val colCount = existingCol.getOrElse(columnLowerCase, -1) + 1
         val renamedCol = if (colCount != 0) {
-          c.concat("_".concat(colCount.toString))
+          column.concat("_".concat(colCount.toString))
         } else {
-          c
+          column
         }
-        existingCol += (c -> colCount)
+        existingCol += (columnLowerCase -> colCount)
         renamedCol
       }
     }
