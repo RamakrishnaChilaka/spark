@@ -359,7 +359,8 @@ private[hive] class SparkExecuteStatementOperation(
         result = result.toDF(normalize(result.columns): _*)
         result = result.toDF(deDuplicateColumns(result.columns): _*)
         // result only has one partition,(I don't know why) so using coalesce is not increasing the number of partitions
-        result.repartition(5).write.mode("overwrite").parquet(filePath); // we are using coalesce instead of repartition because it will preserve the order
+        // result.repartition(5).write.mode("overwrite").parquet(filePath); // we are using coalesce instead of repartition because it will preserve the order
+        result.write.mode("overwrite").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
         val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
