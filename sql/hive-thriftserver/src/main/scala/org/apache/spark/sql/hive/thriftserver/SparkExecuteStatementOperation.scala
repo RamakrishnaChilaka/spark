@@ -358,7 +358,7 @@ private[hive] class SparkExecuteStatementOperation(
         logInfo("NFER: writing to bucket for " + statementId)
         result = result.toDF(normalize(result.columns): _*)
         result = result.toDF(deDuplicateColumns(result.columns): _*)
-        result.repartition(5).write.mode("overwrite").parquet(filePath);
+        result.coalesce(5).write.mode("overwrite").parquet(filePath);
         new ArrayFetchIterator[SparkRow](Array())
       } else {
         val maxNferRows = sqlContext.getConf("spark.sql.nfer_conf.max_preview_rows").toInt
