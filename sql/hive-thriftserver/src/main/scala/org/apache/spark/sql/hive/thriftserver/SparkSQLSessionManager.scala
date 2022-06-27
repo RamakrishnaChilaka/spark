@@ -65,7 +65,6 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
       val hiveSessionState = session.getSessionState
       setConfMap(ctx, hiveSessionState.getOverriddenConfigurations)
       setConfMap(ctx, hiveSessionState.getHiveVariables)
-      // NFER: ctx.sql("use any_db") is not trigger the optimizer extensions, I don't know why...
       if (SessionManager.getXNFERDBHeader.nonEmpty) {
         val DBs = SessionManager.getXNFERDBHeader.split("\\$").map(_.trim).map(_.toLowerCase)
         val firstDB = DBs.apply(0)
